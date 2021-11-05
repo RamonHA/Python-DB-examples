@@ -1,0 +1,40 @@
+db.users.insertOne(
+	{
+		name: "User1",
+		age: 25,
+		status: "Laboranding"
+	}
+);
+
+db.users.insertMany(
+[
+	{
+		name: "User1",
+		age: 25,
+		status: "Laboranding"
+	}, {
+		name: "User2",
+		age: 25,
+		status: "Laboranding"
+	}, {
+		name: "User3",
+		age: 26,
+		status: "nini"
+	}, {
+		name: "User4",
+		age: 26,
+		status: "nini"
+	} , {
+		name: "User5",
+		age: 25,
+		status: "Laboranding"
+	} , {
+		name: "User6",
+		age: 25,
+		status: "Laboranding"
+	}
+]
+);
+db.users.find(
+	{age: {$gt: 25}}
+).limit(2);
