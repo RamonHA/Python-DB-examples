@@ -1,6 +1,8 @@
 from abc import abstractmethod, ABCMeta
 from datetime import date, datetime
 
+import psycopg2
+
 class Meal():
     def __init__(self, meal, price = 0, qty = 0):
         self.price = price
@@ -11,6 +13,19 @@ class Meal():
     def __str__(self):
         return self.name
 
+    def add(self):
+        conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
+
+        cur = conexion.cursor()
+        cur.execute(
+            "INSERT INTO rha ( dish, price ) VALUES ( {}, {} );".format(self.name, self.price)
+        )
+        conexion.commit()
+
+        cur.close()
+        conexion.close()
+
+        print("Database successfully updated with {} at {}!".format(self.name, self.price))
 
 class SubMeal(Meal):
     def __init__(self, submeal, price = 0, qty = 0):
@@ -117,6 +132,9 @@ class Order:
     def total(self):
         return sum( [ i.total() for i in self.__menu ] )
 
+    def add_to_sql(self, v):
+        pass
+
     def menu(self, value):
         if isinstance(value, Menu):
             self.__menu.append(value)
@@ -129,42 +147,6 @@ class Order:
 
     def ticket(self):
         print(self)
-
-    def payment_methods(self):
-        return [
-            "Debit/Credit card",
-            "DAI",
-            "Paypal",
-            "Taquitos"
-        ]
-
-    def auth_methods(self):
-        return [
-            "DNI",
-            "Email",
-            "SMS"
-        ]
-    
-    def form_of_pickup(self):
-        return [
-            "In Place",
-            "Delivery",
-            "Pick Up"
-        ]
-
-    # def pay(self, method = "Debid/Credit card", auth = "DNI", pickup = "Delivery"):
-    #     # Check for emails, dni, numbers, etc.
-
-    #     assert method in self.payment_methods(), "Payment method wrong"
-    #     assert auth in self.auth_methods(), "Auth method wrong"
-    #     assert pickup in self.form_of_pickup(), "Pick Up method wrong"
-
-    #     print("Total will be: $ {} MXN".format(self.total()))
-    #     print("Payment with {} method, auth {}, and will be {}.".format(method, auth, pickup))
-    #     print("Confirm payment!")
-    #     print("Come back soon!!")
-
-    #     print("RESTAURANT")
 
     def pay(self, payment):
         assert isinstance(payment, Payment), "Payment is not type Payment"
