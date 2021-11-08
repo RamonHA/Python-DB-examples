@@ -3,6 +3,21 @@ from datetime import date, datetime
 
 import psycopg2
 
+def menu():
+    conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
+
+    cur = conexion.cursor()
+    cur.execute(
+        "select dish, price from rha_dish;"
+    )
+    for d, p in cur.fetchall():
+        print("{} ... ${}".format(d, p))
+
+    cur.close()
+    conexion.close()
+
+
+
 class Meal():
     def __init__(self, meal, price = 0, qty = 0):
         self.price = price
@@ -18,7 +33,7 @@ class Meal():
 
         cur = conexion.cursor()
         cur.execute(
-            "INSERT INTO rha ( dish, price ) VALUES ( {}, {} );".format(self.name, self.price)
+            "INSERT INTO rha_dish ( dish, price ) VALUES ( '{}', {} );".format(self.name, self.price)
         )
         conexion.commit()
 
@@ -88,11 +103,13 @@ class Menu:
         return self.__meals
 
 class Order:
-    def __init__(self, menu = None, date = date.today()):
+    def __init__(self, menu = None, date = datetime.today()):
         self.__menu = []
         self.__total = 0
 
         self.date = date
+
+        self.order_id = str(datetime.timestamp(date))
 
         if menu is not None:
             self.menu(menu)
@@ -132,9 +149,6 @@ class Order:
     def total(self):
         return sum( [ i.total() for i in self.__menu ] )
 
-    def add_to_sql(self, v):
-        pass
-
     def menu(self, value):
         if isinstance(value, Menu):
             self.__menu.append(value)
@@ -145,12 +159,35 @@ class Order:
         else:
             raise ValueError( "The Menu must be a type Menu" )
 
+    def update_db(self):
+        for i in self.__menu:
+            self.update_df_inv( i )
+
+    def update_df_inv(self, i):
+        conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
+
+        cur = conexion.cursor()
+        s = "INSERT INTO rha_orders ( order_id, date, dish, price_uni, qty, price_t ) VALUES "
+        for m in i.get_meals():
+            s += "('{}', {}, '{}', {}, {}, {}), ".format( self.order_id, self.date, m.name, m.price, m.qty, m.qty*m.price )
+        
+        s = s[:-2] + ";"
+
+        cur.execute(s)
+        conexion.commit()
+
+        cur.close()
+        conexion.close()
+
+        print("Database successfully updated with {} at {}!".format(self.name, self.price))
+
     def ticket(self):
         print(self)
 
     def pay(self, payment):
         assert isinstance(payment, Payment), "Payment is not type Payment"
         payment.pay()
+        self.update_db()
     
 class Payment:
     def __init__(self, type, auth, pickup):
@@ -185,7 +222,7 @@ class Payment:
             "Pick Up"
         ]
 
-    def pay(self):
+    def pay_excp(self):
         try: 
             {
                 "Debit/Credit card":self.debitcredit
@@ -208,6 +245,8 @@ class Payment:
         except:
             raise Exception("Pick Up method not filled")
 
+    def pay(self):
+        self.pay_excp()
         print("Payment with {} method, auth {}, and will be {}.".format(self.type, self.auth, self.pickup))
         print("Confirm payment!")
         print("Come back soon!!")
@@ -274,3 +313,15 @@ if __name__ == "__main__":
     p.date = datetime(2021,1,1, 4) # Date of pick up
     
     o.pay(p)
+
+
+    # Add meals to menu
+    # This is not a menu of orderss, it is more 
+    # the menu of thins available on the restaurant
+    print("\n\n")
+    # SubMeal("pizza hawaiana", 100, 1).add()
+    # SubMeal("hamburguesa normal", 70, 2).add()
+
+    menu()
+
+
