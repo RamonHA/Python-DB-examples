@@ -3,49 +3,94 @@ from datetime import date, datetime
 
 import psycopg2
 
+
 def menu():
-    conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
-
-    cur = conexion.cursor()
-    cur.execute(
-        "select dish, price from rha_dish;"
-    )
-    for d, p in cur.fetchall():
-        print("{} ... ${}".format(d, p))
-
-    cur.close()
-    conexion.close()
-
+    with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+        with conexion.cursor() as cur:
+            cur.execute(
+                "select dish, price from rha_dish;"
+            )
+            for d, p in cur.fetchall():
+                print("{} ... ${}".format(d, p))
 
 
 class Meal():
-    def __init__(self, meal, price = 0, qty = 0):
+    def __init__(self, meal = None, price = 0, qty = 0):
         self.price = price
-        self.meal = meal
         self.qty = qty
         self.name = meal
 
     def __str__(self):
         return self.name
 
-    def add(self):
-        conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
+    def ensure_meal(self):
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+                cur.execute(
+                    "select dish from rha_dish;"
+                )
+                for d in cur.fetchall():
+                    if d == self.name: return True
+                
+                return False
 
-        cur = conexion.cursor()
-        cur.execute(
-            "INSERT INTO rha_dish ( dish, price ) VALUES ( '{}', {} );".format(self.name, self.price)
-        )
-        conexion.commit()
+    def add_meal(self):
+        if self.ensure_meal(): 
+            print("Meal already on database, not updated")
+            return None
 
-        cur.close()
-        conexion.close()
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO rha_dish ( dish, price ) VALUES ( '{}', {} );".format(self.name, self.price)
+                )
+                conexion.commit()
 
-        print("Database successfully updated with {} at {}!".format(self.name, self.price))
+        print("Dish Database successfully updated with {} at {}!".format(self.name, self.price))
+
+    def add_ingredient(self):
+        if self.ensure_ingredients():
+            print("Ingredient already on database, not updated")
+            return None
+
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+
+                cur.execute(
+                    "INSERT INTO rha_ingredients ( ingredient, price ) VALUES ( '{}', {} );".format(self.name, self.price)
+                )
+                conexion.commit()
+
+        print("Ingredients Database successfully updated with {} at {}!".format(self.name, self.price))
+
+    def ensure_ingredients(self):
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+                cur.execute(
+                    "select ingredient from rha_ingredients;"
+                )
+                for d in cur.fetchall():
+                    if d == self.name: return True
+                
+                return False
 
 class SubMeal(Meal):
     def __init__(self, submeal, price = 0, qty = 0):
-        Meal.__init__( self, submeal.split(" ")[0], price, qty )
+        Meal.__init__( self, submeal, price, qty )
         self.name = submeal
+        aux = submeal
+        self.ingredients = 
+
+    def get_price(self):
+        pass
+    
+    def get_meal(self):
+        pass
+
+    def get_ingredients(self):
+        pass
+
+
 
 class Menu:
     def __init__(self, meal = None, submeal = None):
@@ -167,9 +212,19 @@ class Order:
         conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
 
         cur = conexion.cursor()
-        s = "INSERT INTO rha_orders ( order_id, date, dish, price_uni, qty, price_t ) VALUES "
+        s = "INSERT INTO rha_orders( order_id, date, dish, price_uni, qty, price_t,  payment_type, auth, pickup) VALUES "
         for m in i.get_meals():
-            s += "('{}', {}, '{}', {}, {}, {}), ".format( self.order_id, self.date, m.name, m.price, m.qty, m.qty*m.price )
+            s += "('{}', '{}', '{}', {}, {}, {}, '{}', '{}', '{}'), ".format( 
+                            self.order_id, 
+                            self.date, 
+                            m.name, 
+                            m.price, 
+                            m.qty, 
+                            m.qty*m.price,
+                            self.payment.type,
+                            self.payment.auth,
+                            self.payment.pickup
+                            )
         
         s = s[:-2] + ";"
 
@@ -179,18 +234,19 @@ class Order:
         cur.close()
         conexion.close()
 
-        print("Database successfully updated with {} at {}!".format(self.name, self.price))
+        print("Database successfully updated.")
 
     def ticket(self):
         print(self)
 
     def pay(self, payment):
         assert isinstance(payment, Payment), "Payment is not type Payment"
-        payment.pay()
+        self.payment = payment
+        self.payment.pay()
         self.update_db()
     
 class Payment:
-    def __init__(self, type, auth, pickup):
+    def __init__(self, type = None, auth = None, pickup = None):
         self.type = type
         self.auth = auth
         self.pickup = pickup
@@ -319,9 +375,11 @@ if __name__ == "__main__":
     # This is not a menu of orderss, it is more 
     # the menu of thins available on the restaurant
     print("\n\n")
-    # SubMeal("pizza hawaiana", 100, 1).add()
-    # SubMeal("hamburguesa normal", 70, 2).add()
+    Meal("pizza", 100).add()
+    Meal("pina", 10).add()
 
     menu()
+
+
 
 

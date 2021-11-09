@@ -8,10 +8,13 @@ import pymongo
 
 import psycopg2
 
-# CREATE TABLE rha_dish(id SERIAL PRIMARY KEY NOT NULL, dish CHAR(50) NOT NULL, price FLOAT NOT NULL);
+# CREATE TABLE rha_dish(id SERIAL PRIMARY KEY NOT NULL, dish CHAR(20) NOT NULL, price FLOAT NOT NULL);
+# CREATE TABLE rha_ingredients(id SERIAL PRIMARY KEY NOT NULL, ingredient CHAR(20) NOT NULL, price FLOAT NOT NULL);
 # INSERT INTO rha_dish( dish, price ) VALUES ();
 
 # CREATE TABLE rha_orders(id SERIAL PRIMARY KEY NOT NULL, order_id CHAR(30) NOT NULL, date DATE NOT NULL, dish CHAR(50) NOT NULL, price_uni FLOAT NOT NULL, qty FLOAT NOT NULL, price_t FLOAT NOT NULL);
+
+# CREATE TALBE rha_users(id SERIAL PRIMARY KEY NOT NULL, name CHAR(30) NOT NULL, age INT, )
 
 def postgress():
     conexion = psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" )
