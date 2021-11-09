@@ -7,8 +7,16 @@ import psycopg2
 def menu():
     with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
         with conexion.cursor() as cur:
+            print("\nMain dishes:")
             cur.execute(
                 "select dish, price from rha_dish;"
+            )
+            for d, p in cur.fetchall():
+                print("{} ... ${}".format(d, p))
+
+            print("\nIngredients:")
+            cur.execute(
+                "select ingredient, price from rha_ingredients;"
             )
             for d, p in cur.fetchall():
                 print("{} ... ${}".format(d, p))
@@ -29,8 +37,8 @@ class Meal():
                 cur.execute(
                     "select dish from rha_dish;"
                 )
-                for d in cur.fetchall():
-                    if d == self.name: return True
+                for d, in cur.fetchall():
+                    if d.strip() == self.name: return True
                 
                 return False
 
@@ -69,20 +77,19 @@ class Meal():
                 cur.execute(
                     "select ingredient from rha_ingredients;"
                 )
-                for d in cur.fetchall():
-                    if d == self.name: return True
+                for d, in cur.fetchall():
+                    if d.strip() == self.name: return True
                 
                 return False
 
-class SubMeal(Meal):
+class Food(Meal):
     def __init__(self, submeal, price = 0, qty = 0):
         Meal.__init__( self, meal = submeal, price = price, qty = qty )
         self.name = submeal
-        self.ingredients = submeal.split(" ")[1:].replace("and", "").replace("with", "").split(" ")
+        self.ingredients = submeal.replace("and", "").replace("with", "").split(" ")[1:]
 
         if price == 0:
             self.price = self.get_price()
-
 
     def get_price(self):
         return self.get_meal() + self.get_ingredients()
@@ -94,7 +101,7 @@ class SubMeal(Meal):
                     "select dish, price from rha_dish;"
                 )
                 for d, p in cur.fetchall():
-                    if d == self.name.split(" ")[0]: return p
+                    if d.strip() == self.name.split(" ")[0]: return p
 
         raise ValueError("Meal not in Database")
 
@@ -108,7 +115,7 @@ class SubMeal(Meal):
                     "select ingredient, price from rha_ingredients;"
                 )
                 for d, p in cur.fetchall():
-                    if d == value: return p
+                    if d.strip() == value: return p
 
         raise ValueError("Ingredient not in Database")
 
@@ -124,7 +131,7 @@ class Menu:
             self.meals(submeal)
 
     def meals(self, value):
-        if isinstance(value, Meal) or isinstance(value , SubMeal):
+        if isinstance(value, Meal) or isinstance(value , Food):
             self.__meals.append( value )
             self.__total += ( value.price*value.qty )
         elif isinstance(value, list):
@@ -364,22 +371,24 @@ class Payment:
 
 
 if __name__ == "__main__":
+
+    # Add Meals to Menu available
+    Meal("pizza", 100).add_meal()
+    Meal("pina", 10).add_ingredient()
+    Meal("hamburguesa", 70).add_meal()
+    Meal("arrachera", 20).add_ingredient()
+
+    menu()
+
+
     m = Menu()
-    m.meals( SubMeal("pizza hawaiana", 100, 1) )
-    m.meals( SubMeal("hamburguesa normal", 70, 2) )
+    m.meals( Food("pizza pina", qty=  1) )
+    m.meals( Food("hamburguesa arrachera", qty = 2) )
 
     print(m)
 
-    m2 = Menu( 
-        submeal= [
-            SubMeal("tacos de pastor", 10, 5),
-            SubMeal("suchi frito", 70, 1)
-        ] 
-    )
 
-    print(m2)
-
-    o = Order( [m, m2] )
+    o = Order( m )
 
     print(o)
 
@@ -390,15 +399,7 @@ if __name__ == "__main__":
     
     o.pay(p)
 
-
-    # Add meals to menu
-    # This is not a menu of orderss, it is more 
-    # the menu of thins available on the restaurant
-    print("\n\n")
-    Meal("pizza", 100).add()
-    Meal("pina", 10).add()
-
-    menu()
+    
 
 
 
