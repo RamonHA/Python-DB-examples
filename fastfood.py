@@ -76,21 +76,41 @@ class Meal():
 
 class SubMeal(Meal):
     def __init__(self, submeal, price = 0, qty = 0):
-        Meal.__init__( self, submeal, price, qty )
+        Meal.__init__( self, meal = submeal, price = price, qty = qty )
         self.name = submeal
-        aux = submeal
-        self.ingredients = 
+        self.ingredients = submeal.split(" ")[1:].replace("and", "").replace("with", "").split(" ")
+
+        if price == 0:
+            self.price = self.get_price()
+
 
     def get_price(self):
-        pass
+        return self.get_meal() + self.get_ingredients()
     
     def get_meal(self):
-        pass
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+                cur.execute(
+                    "select dish, price from rha_dish;"
+                )
+                for d, p in cur.fetchall():
+                    if d == self.name.split(" ")[0]: return p
+
+        raise ValueError("Meal not in Database")
 
     def get_ingredients(self):
-        pass
+        return sum([self.get_ingredients_indv(i) for i in self.ingredients])
 
+    def get_ingredients_indv(self, value):
+        with psycopg2.connect( "dbname=ramon_hinojosa_d user=ramon_hinojosa password=ramon_hinojosa123*" ) as conexion:
+            with conexion.cursor() as cur:
+                cur.execute(
+                    "select ingredient, price from rha_ingredients;"
+                )
+                for d, p in cur.fetchall():
+                    if d == value: return p
 
+        raise ValueError("Ingredient not in Database")
 
 class Menu:
     def __init__(self, meal = None, submeal = None):
