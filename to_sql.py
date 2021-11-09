@@ -3,6 +3,7 @@
 # This is a test file for the sql connection
 # Later on, we are going to make the final changes to fastfood script
 
+from typing import Mapping
 from pymongo import MongoClient
 import pymongo
 
@@ -33,10 +34,30 @@ def postgress():
 
 def mongo():
 
+    CONNECTION_STRING = "mongodb+srv://ramon_hinojosa:ramon_hinojosa123*@rockstars.mongodb.net/rha_orders"
+
+    client = MongoClient( CONNECTION_STRING )
+
+    db = client["rha_orders"]
+
+    collection = db["orders"]
+
+    collection.insert_one( 
+        {
+            "dish":"burguers",
+            "qty":1,
+            "price":100
+        }
+    )
+
+    items = collection.find()
+
+    for item in items:
+        print(item)
 
     print("Mongo Success!")
 
 if __name__ == "__main__":
-    postgress()
-    # mongo()
+    # postgress()
+    mongo()
 
